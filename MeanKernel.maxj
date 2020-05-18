@@ -1,0 +1,43 @@
+
+package mean;
+
+import com.maxeler.maxcompiler.v2.kernelcompiler.Kernel;
+import com.maxeler.maxcompiler.v2.kernelcompiler.KernelParameters;
+import com.maxeler.maxcompiler.v2.kernelcompiler.stdlib.core.CounterChain;
+import com.maxeler.maxcompiler.v2.kernelcompiler.types.base.DFEVar;
+
+class MeanSolutionKernel extends Kernel {
+
+	protected MeanSolutionKernel(KernelParameters parameters) {
+		super(parameters);
+        
+        //velicina piksela
+		int height = 256, width = 256;
+        
+        //ulaz
+		DFEVar inImage = io.input("inImage", dfeInt(32));
+    
+        //inicijalizacija sume na 0
+		DFEVar Sum = constant.var(0);
+
+		// prolazak kroz matricu
+		for (int x = -1; x <= 1; x++)
+			for (int y = -1; y <= 1; y++)
+				Sum = Sum + stream.offset(inImage, y * width + x);
+
+		// racunanje srednje vrednosti
+		DFEVar result = Sum / 9;
+
+		// pracenje x i y
+		CounterChain chain = control.count.makeCounterChainMoreBits();
+		DFEVar y = chain.addCounter(height, 1);
+		DFEVar x = chain.addCounter(width, 1);
+
+		// provera da li su x i y u opsegu ivica matrice - edz slucajevi
+		result = ((x > 0 & x < width - 1) & (y > 0 & y < height - 1)) ? result
+			: 0;
+        
+        //izlaz
+		io.output("outImage", result, result.getType());
+	}
+}
